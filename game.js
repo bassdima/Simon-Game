@@ -10,6 +10,8 @@ const controlElements = {
   buttons: document.querySelectorAll('[data-control="btn"]')
 }
 
+let { userClickedColour, gameChosenColour, buttonColours, level } = values;
+
 const playSound = (name) => {
   const audio = new Audio('sounds/' + name + '.mp3');
 
@@ -35,12 +37,11 @@ const showGameChoosigColor = (colors, cssClass) => {
 }
 
 const setLevel = () => {
-  ++values.level;
-  controlElements.title.innerHTML = 'Level ' + values.level;
+  ++level;
+  controlElements.title.innerHTML = 'Level ' + level;
 }
 
-const startNextSequence = () => {
-  const { buttonColours, gameChosenColour } = values;
+const setNextSequence = () => {
   const randomNumber = Math.floor(Math.random() * 4);
   const randomChosenColour = buttonColours[randomNumber];
   const activeBtnClass = 'active-btn-js';
@@ -50,26 +51,22 @@ const startNextSequence = () => {
   setLevel();
 }
 
-const startTheGame = () => {
-    startNextSequence();
-    window.removeEventListener('click', startTheGame);
+const startNextSequence = (time) => {
+  setTimeout(() => {
+    setNextSequence();
+  }, time);
 }
 
 const checkAnswer = () => {
-  const { userClickedColour, gameChosenColour } = values;
-  const index = userClickedColour.length - 1;
+  const index = values.userClickedColour.length - 1;
 
   if (userClickedColour[index] !== gameChosenColour[index]) {
     playSound('wrong');
     switchCssClass(document.body, 'game-over');
-    controlElements.title.innerHTML = "GAME OVER<br/>Press title to Restart";
-    controlElements.title.addEventListener('click', () => window.location.reload());
+    controlElements.title.innerHTML = "GAME OVER<br/>Press any button to Restart";
   }
-
   if (userClickedColour.toString() === gameChosenColour.toString()) {
-    setTimeout(() => {
-      startNextSequence();
-    }, 1000);
+    startNextSequence(1000);
     userClickedColour.length = 0;
   }
 }
@@ -77,12 +74,22 @@ const checkAnswer = () => {
 controlElements.buttons.forEach((elem) => {
   elem.addEventListener('click', (event) => {
     const { id } = event.target;
+    const index = userClickedColour.length - 1;
 
-    values.userClickedColour.push(id);
-    playSound(id);
-    switchCssClass(event.target, 'pressed');
-    checkAnswer();
+    if (userClickedColour[index] !== gameChosenColour[index]) {
+      userClickedColour.length = 0;
+      gameChosenColour.length = 0;
+      level = 0;
+      startNextSequence(250);
+    }
+    else if(level === 0) {
+      startNextSequence(250);
+    }
+    else{
+      userClickedColour.push(id);
+      playSound(id);
+      switchCssClass(event.target, 'pressed');
+      checkAnswer();
+    }
   });
 });
-
-window.addEventListener('click', startTheGame);
